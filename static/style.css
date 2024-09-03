@@ -1,0 +1,52 @@
+/* style.css */
+
+.navbar {
+  background-color: #dbe2ef; /* Indigo-300 color code */
+}
+
+/* Optional: Adjust the color of navbar links */
+.navbar-nav .nav-link {
+  color: #9912c3; /* Change to desired color for text */
+}
+
+.navbar-nav .nav-link.active {
+  color: #9912c3; /* Change to desired color for active link */
+}
+
+.form-container {
+  width: 1024px;
+  margin: 0 auto;
+  position: absolute;
+  top: 40%; /* Adjust this value to move the form slightly above the vertical center */
+  left: 50%;
+  transform: translate(-50%, -40%);
+  padding: 20px;
+}
+
+.navbar {
+  margin-bottom: 20px;
+}
+
+.card {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card-title {
+  font-size: 1.25rem;
+  margin-bottom: 10px;
+}
+
+.card-text {
+  font-size: 1rem;
+  margin-bottom: 15px;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3;
+  border-color: #004085;
+}
