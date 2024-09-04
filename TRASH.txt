@@ -1,0 +1,12 @@
+Passaggi Finali
+
+    Migrations: Esegui le migrazioni per aggiornare il database con 
+    i nuovi campi e relazioni:
+
+    bash
+        flask db init
+        flask db migrate
+        flask db upgrade
+
+Test: Avvia l'applicazione con python app.py e verifica che tutte le 
+funzionalità funzionino come previsto.

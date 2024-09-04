@@ -6,6 +6,22 @@ import user_dao
 import workout_dao  
 from models import User
 
+###############################
+#########TODO QUESTO CODICE è DA IMPLEMENTARE?
+###############################
+# from flask_sqlalchemy import SQLAlchemy
+# from flask_migrate import Migrate
+
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mydatabase.db'
+# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# db = SQLAlchemy(app)
+# migrate = Migrate(app, db)
+
+# # Importa i modelli
+# from models import User, Trainer, Client, Workout, TrainingPlan
+
+
 # Create the application
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'trisetitri'
@@ -26,10 +42,13 @@ def home_client():
     return render_template('client/home_client.html', trainers=trainers)
 
 @app.route('/choose_trainer')
+@login_required
 def choose_trainer():
-    return render_template('client/choose_trainer.html')
+    trainers = Trainer.query.all() # TODO CAMBIARE NOME VARIABILE
+    return render_template('choose_trainer.html', trainers=trainers)
 
 @app.route('/profile_client')
+@login_required
 def profile_client():
     return render_template('client/profile_client.html')
 
@@ -147,3 +166,154 @@ def load_user(user_id):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+#############################################
+############# TODO ROUTE TESTING ############
+#############################################
+
+# Rotta per visualizzare il profilo del cliente
+# @app.route('/profile_client')
+# def profile_client():
+#     if 'client_id' not in session:
+#         flash('Please log in first.')
+#         return redirect(url_for('login'))
+
+#     client_id = session['client_id']
+#     client = Client.query.get(client_id)
+#     trainer = client.trainer  # Associazione uno a uno tra Cliente e Trainer
+#     training_plans = TrainingPlan.query.filter_by(client_id=client_id).all()
+
+#     return render_template('profile_client.html', client=client, training_plans=training_plans)
+
+################################################
+
+# Rotta per valutare una scheda di allenamento
+# @app.route('/rate_plan/<int:plan_id>', methods=['POST'])
+# def rate_plan(plan_id):
+#     if 'client_id' not in session:
+#         flash('Please log in first.')
+#         return redirect(url_for('login'))
+
+#     rating = int(request.form['rating'])
+#     training_plan = TrainingPlan.query.get(plan_id)
+#     if not training_plan or training_plan.client_id != session['client_id']:
+#         flash('Invalid request.')
+#         return redirect(url_for('profile_client'))
+
+#     # Aggiorna la valutazione della scheda
+#     training_plan.rating = rating
+#     db.session.commit()
+
+#     # Calcola il nuovo rating del personal trainer
+#     trainer = training_plan.trainer
+#     all_ratings = [plan.rating for plan in trainer.training_plans if plan.rating is not None]
+#     trainer.rating = sum(all_ratings) / len(all_ratings) if all_ratings else 0
+#     db.session.commit()
+
+#     flash('Rating submitted successfully.')
+#     return redirect(url_for('profile_client'))
+
+########################################################
+
+# # Rotta per la home del personal trainer
+# @app.route('/home_personal')
+# def home_personal():
+#     if 'trainer_id' not in session:
+#         flash('Please log in first.')
+#         return redirect(url_for('login'))
+    
+#     trainer_id = session['trainer_id']
+#     trainer = Trainer.query.get(trainer_id)
+#     public_workouts = Workout.query.filter_by(is_public=True).order_by(Workout.created_at.desc()).all()
+#     return render_template('home_personal.html', trainer=trainer, public_workouts=public_workouts)
+
+# # Rotta per creare un nuovo allenamento
+# @app.route('/create_workout', methods=['GET', 'POST'])
+# def create_workout():
+#     if 'trainer_id' not in session:
+#         flash('Please log in first.')
+#         return redirect(url_for('login'))
+    
+#     if request.method == 'POST':
+#         title = request.form['title']
+#         description = request.form['description']
+#         level = request.form['level']
+#         is_public = 'is_public' in request.form
+#         trainer_id = session['trainer_id']
+        
+#         new_workout = Workout(title=title, description=description, level=level, is_public=is_public, trainer_id=trainer_id)
+#         db.session.add(new_workout)
+#         db.session.commit()
+#         flash('Workout created successfully!')
+#         return redirect(url_for('home_personal'))
+    
+#     return render_template('create_workout.html')
+
+# # Rotta per modificare un allenamento
+# @app.route('/edit_workout/<int:workout_id>', methods=['GET', 'POST'])
+# def edit_workout(workout_id):
+#     workout = Workout.query.get_or_404(workout_id)
+#     if 'trainer_id' not in session or workout.trainer_id != session['trainer_id']:
+#         flash('Unauthorized action.')
+#         return redirect(url_for('home_personal'))
+    
+#     if request.method == 'POST':
+#         workout.title = request.form['title']
+#         workout.description = request.form['description']
+#         workout.level = request.form['level']
+#         workout.is_public = 'is_public' in request.form
+#         db.session.commit()
+#         flash('Workout updated successfully!')
+#         return redirect(url_for('home_personal'))
+    
+#     return render_template('edit_workout.html', workout=workout)
+
+# # Rotta per eliminare un allenamento
+# @app.route('/delete_workout/<int:workout_id>', methods=['POST'])
+# def delete_workout(workout_id):
+#     workout = Workout.query.get_or_404(workout_id)
+#     if 'trainer_id' not in session or workout.trainer_id != session['trainer_id']:
+#         flash('Unauthorized action.')
+#         return redirect(url_for('home_personal'))
+    
+#     db.session.delete(workout)
+#     db.session.commit()
+#     flash('Workout deleted successfully!')
+#     return redirect(url_for('home_personal'))
+
+##############################################
+
+# # Rotta per la pagina del profilo del personal trainer
+# @app.route('/profile_personal')
+# def profile_personal():
+#     if 'trainer_id' not in session:
+#         flash('Please log in first.')
+#         return redirect(url_for('login'))
+    
+#     trainer_id = session['trainer_id']
+#     trainer = Trainer.query.get(trainer_id)
+    
+#     # Calcolare il rating medio
+#     if trainer.training_plans:
+#         total_rating = sum(plan.rating for plan in trainer.training_plans if plan.rating is not None)
+#         count = sum(1 for plan in trainer.training_plans if plan.rating is not None)
+#         trainer.rating = total_rating / count if count > 0 else 0
+    
+#     public_workouts = [workout for workout in trainer.workouts if workout.is_public]
+#     private_workouts = [workout for workout in trainer.workouts if not workout.is_public]
+    
+#     return render_template('profile_personal.html', trainer=trainer, public_workouts=public_workouts, private_workouts=private_workouts)
+
+# # Rotta di login (placeholder per contesto)
+# @app.route('/login', methods=['GET', 'POST'])
+# def login():
+#     # Implementa la logica di login qui
+#     return 'Login placeholder'
+
+# # Rotta per logout
+# @app.route('/logout')
+# def logout():
+#     session.pop('trainer_id', None)
+#     flash('You have been logged out.')
+#     return redirect(url_for('login'))
