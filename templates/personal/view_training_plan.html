@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizza Scheda di Allenamento</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Scheda di Allenamento per {{ client.username }}</h1>
+
+    <div class="training-plan">
+        {% for workout in training_plan.workouts %}
+            <div class="workout">
+                <h2>{{ workout.title }}</h2>
+                <p><strong>Descrizione:</strong> {{ workout.description }}</p>
+                <p><strong>Livello:</strong> {{ workout.level }}</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if user_type == 'cliente' %}
+        <form action="{{ url_for('rate_training_plan', training_plan_id=training_plan.id) }}" method="POST">
+            <label for="rating">Valuta questa scheda:</label>
+            <select id="rating" name="rating" required>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+            </select>
+            <button type="submit">Invia Voto</button>
+        </form>
+    {% endif %}
+
+    <a href="{{ url_for('client_dashboard') }}">Torna alla Dashboard</a>
+</body>
+</html>

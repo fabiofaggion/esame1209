@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crea Scheda di Allenamento</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Crea una Scheda di Allenamento per il Cliente</h1>
+
+    <form action="{{ url_for('create_training_plan', client_id=client.id) }}" method="POST">
+        <label for="title">Titolo della Scheda:</label>
+        <input type="text" id="title" name="title" required>
+
+        <label for="workouts">Seleziona gli Allenamenti:</label>
+        <select id="workouts" name="workouts" multiple required>
+            {% for workout in workouts %}
+                <option value="{{ workout.id }}">{{ workout.title }} ({{ workout.level }})</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit">Crea Scheda</button>
+    </form>
+
+    <a href="{{ url_for('home_personal') }}">Torna alla Home</a>
+</body>
+</html>

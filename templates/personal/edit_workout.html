@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifica Allenamento</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Modifica Allenamento</h1>
+
+    <form action="{{ url_for('edit_workout', workout_id=workout.id) }}" method="POST">
+        <input type="hidden" name="_method" value="PUT">
+
+        <label for="title">Titolo:</label>
+        <input type="text" id="title" name="title" value="{{ workout.title }}" required>
+
+        <label for="description">Descrizione:</label>
+        <textarea id="description" name="description" required>{{ workout.description }}</textarea>
+
+        <label for="level">Livello:</label>
+        <select id="level" name="level" required>
+            <option value="facile" {% if workout.level == 'facile' %}selected{% endif %}>Facile</option>
+            <option value="medio" {% if workout.level == 'medio' %}selected{% endif %}>Medio</option>
+            <option value="difficile" {% if workout.level == 'difficile' %}selected{% endif %}>Difficile</option>
+        </select>
+
+        <label for="public">Pubblico:</label>
+        <input type="checkbox" id="public" name="public" {% if workout.public %}checked{% endif %}>
+
+        <button type="submit">Salva Modifiche</button>
+    </form>
+
+    <a href="{{ url_for('trainer_dashboard') }}">Annulla</a>
+</body>
+</html>

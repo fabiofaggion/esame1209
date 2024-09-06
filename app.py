@@ -26,6 +26,28 @@ from models import User
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'trisetitri'
 
+# Creare un file di database di test
+# connection = sqlite3.connect('db/test.db')
+# cursor = connection.cursor()
+
+import sqlite3
+
+def test_db_connection():
+    try:
+        # Usa il percorso relativo al database come definito nella tua configurazione
+        connection = sqlite3.connect('db/database.db')
+        cursor = connection.cursor()
+        cursor.execute('SELECT name FROM sqlite_master WHERE type="table";')
+        tables = cursor.fetchall()
+        print("Tabelle nel database:", tables)
+        connection.close()
+    except sqlite3.Error as e:
+        print(f"Errore nella connessione al database: {e}")
+
+test_db_connection()
+
+
+
 login_manager = LoginManager()
 login_manager.init_app(app)
 
@@ -42,7 +64,7 @@ def home_client():
     return render_template('client/home_client.html', trainers=trainers)
 
 @app.route('/choose_trainer')
-@login_required
+# @login_required
 def choose_trainer():
     trainers = Trainer.query.all() # TODO CAMBIARE NOME VARIABILE
     return render_template('choose_trainer.html', trainers=trainers)
@@ -170,6 +192,7 @@ if __name__ == '__main__':
 
 #############################################
 ############# TODO ROUTE TESTING ############
+# QUESTO è CODICE SPORCO, CI SONO RIGHE DA CANCELLARE CHE SI RIPETONO OGNI BLOCCO FORSE
 #############################################
 
 # Rotta per visualizzare il profilo del cliente
@@ -317,3 +340,344 @@ if __name__ == '__main__':
 #     session.pop('trainer_id', None)
 #     flash('You have been logged out.')
 #     return redirect(url_for('login'))
+
+############################################
+
+# Rotte create_training_plan.hmtl
+######## TODO CODICE SPORCO, RIGHE DA RIMUOVORE
+
+# from flask import Flask, render_template, request, redirect, url_for, flash
+# from models import db, Trainer, Client, Workout, TrainingPlan
+
+# # Configurazione Flask
+# app = Flask(__name__)
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mydatabase.db'
+# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# app.secret_key = 'your_secret_key'
+
+# # Inizializzazione del database
+# db.init_app(app)
+
+# # Rotta per mostrare il form di creazione della scheda di allenamento
+# @app.route('/create_training_plan/<int:client_id>', methods=['GET', 'POST'])
+# def create_training_plan(client_id):
+#     # Verifica se l'utente è un personal trainer (autenticazione necessaria)
+#     # Assumi che l'autenticazione sia gestita da un altro sistema
+#     trainer = Trainer.query.filter_by(id=current_user.id).first()
+
+#     if not trainer:
+#         flash("Devi essere un personal trainer per creare una scheda di allenamento.")
+#         return redirect(url_for('home'))
+
+#     client = Client.query.get_or_404(client_id)
+
+#     if request.method == 'POST':
+#         title = request.form['title']
+#         workout_ids = request.form.getlist('workouts')
+        
+#         if not title or not workout_ids:
+#             flash("Tutti i campi sono obbligatori.")
+#             return redirect(request.url)
+
+#         # Filtra gli allenamenti selezionati per assicurare che appartengano al trainer o siano pubblici
+#         selected_workouts = Workout.query.filter(Workout.id.in_(workout_ids), 
+#                                                  (Workout.trainer_id == trainer.id) | (Workout.is_public == True)).all()
+
+#         # Crea la nuova scheda di allenamento
+#         new_plan = TrainingPlan(title=title, client_id=client_id, trainer_id=trainer.id)
+#         db.session.add(new_plan)
+#         db.session.commit()
+
+#         # Associa gli allenamenti selezionati alla scheda
+#         for workout in selected_workouts:
+#             new_plan.workouts.append(workout)
+#         db.session.commit()
+
+#         flash("Scheda di allenamento creata con successo!")
+#         return redirect(url_for('trainer_dashboard'))
+
+#     # Recupera gli allenamenti disponibili per il trainer
+#     workouts = Workout.query.filter((Workout.trainer_id == trainer.id) | (Workout.is_public == True)).all()
+#     return render_template('create_training_plan.html', client=client, workouts=workouts)
+
+# if __name__ == '__main__':
+#     app.run(debug=True)
+
+#########################################
+
+# rotta delete_training_plan.html
+
+# Rotta per mostrare la pagina di conferma eliminazione della scheda di allenamento
+# @app.route('/delete_training_plan/<int:plan_id>', methods=['GET'])
+# @login_required
+# def show_delete_training_plan(plan_id):
+#     # Verifica se l'utente è un personal trainer
+#     trainer = Trainer.query.filter_by(id=current_user.id).first()
+
+#     if not trainer:
+#         flash("Devi essere un personal trainer per eliminare una scheda di allenamento.")
+#         return redirect(url_for('home'))
+
+#     training_plan = TrainingPlan.query.get_or_404(plan_id)
+
+#     # Verifica che il training_plan appartenga al personal trainer
+#     if training_plan.trainer_id != trainer.id:
+#         flash("Non sei autorizzato ad eliminare questa scheda.")
+#         return redirect(url_for('trainer_dashboard'))
+
+#     return render_template('delete_training_plan.html', training_plan=training_plan)
+
+# # Rotta per gestire l'eliminazione della scheda di allenamento
+# @app.route('/delete_training_plan/<int:plan_id>', methods=['POST'])
+# @login_required
+# def delete_training_plan(plan_id):
+#     trainer = Trainer.query.filter_by(id=current_user.id).first()
+
+#     if not trainer:
+#         flash("Devi essere un personal trainer per eliminare una scheda di allenamento.")
+#         return redirect(url_for('home'))
+
+#     training_plan = TrainingPlan.query.get_or_404(plan_id)
+
+#     if training_plan.trainer_id != trainer.id:
+#         flash("Non sei autorizzato ad eliminare questa scheda.")
+#         return redirect(url_for('trainer_dashboard'))
+
+#     # Elimina la scheda di allenamento
+#     db.session.delete(training_plan)
+#     db.session.commit()
+
+#     flash("Scheda di allenamento eliminata con successo!")
+#     return redirect(url_for('trainer_dashboard'))
+
+# if __name__ == '__main__':
+#     app.run(debug=True)
+
+##########################################
+
+# rotta delete_workout.html
+
+# Rotta per mostrare la pagina di conferma eliminazione dell'allenamento
+# @app.route('/delete_workout/<int:workout_id>', methods=['GET'])
+# @login_required
+# def show_delete_workout(workout_id):
+#     # Verifica se l'utente è un personal trainer
+#     trainer = Trainer.query.filter_by(id=current_user.id).first()
+
+#     if not trainer:
+#         flash("Devi essere un personal trainer per eliminare un allenamento.")
+#         return redirect(url_for('home'))
+
+#     workout = Workout.query.get_or_404(workout_id)
+
+#     # Verifica che l'allenamento appartenga al personal trainer
+#     if workout.trainer_id != trainer.id:
+#         flash("Non sei autorizzato ad eliminare questo allenamento.")
+#         return redirect(url_for('trainer_dashboard'))
+
+#     return render_template('delete_workout.html', workout=workout)
+
+# Rotta per gestire l'eliminazione dell'allenamento
+# @app.route('/delete_workout/<int:workout_id>', methods=['POST'])
+# @login_required
+# def delete_workout(workout_id):
+#     trainer = Trainer.query.filter_by(id=current_user.id).first()
+
+#     if not trainer:
+#         flash("Devi essere un personal trainer per eliminare un allenamento.")
+#         return redirect(url_for('home'))
+
+#     workout = Workout.query.get_or_404(workout_id)
+
+#     # Verifica che l'allenamento appartenga al personal trainer
+#     if workout.trainer_id != trainer.id:
+#         flash("Non sei autorizzato ad eliminare questo allenamento.")
+#         return redirect(url_for('trainer_dashboard'))
+
+#     # Elimina l'allenamento
+#     db.session.delete(workout)
+#     db.session.commit()
+
+#     flash("Allenamento eliminato con successo!")
+#     return redirect(url_for('trainer_dashboard'))
+
+# if __name__ == '__main__':
+#     app.run(debug=True)
+
+
+#####################################################
+
+# rotta edit_training_plan.html
+
+# Rotta per mostrare il modulo di modifica della scheda di allenamento
+# @app.route('/edit_training_plan/<int:training_plan_id>', methods=['GET'])
+# @login_required
+# def show_edit_training_plan(training_plan_id):
+#     trainer = Trainer.query.filter_by(id=current_user.id).first()
+
+#     if not trainer:
+#         flash("Devi essere un personal trainer per modificare una scheda di allenamento.")
+#         return redirect(url_for('home'))
+
+#     training_plan = TrainingPlan.query.get_or_404(training_plan_id)
+
+#     # Verifica che la scheda appartenga al personal trainer
+#     if training_plan.trainer_id != trainer.id:
+#         flash("Non sei autorizzato a modificare questa scheda di allenamento.")
+#         return redirect(url_for('trainer_dashboard'))
+
+#     # Recupera gli allenamenti disponibili (pubblici e privati del trainer)
+#     available_workouts = Workout.query.filter(
+#         (Workout.public == True) | (Workout.trainer_id == trainer.id)
+#     ).all()
+
+#     # Allenamenti selezionati nella scheda
+#     selected_workouts = [workout.id for workout in training_plan.workouts]
+
+#     return render_template('edit_training_plan.html', training_plan=training_plan, available_workouts=available_workouts, selected_workouts=selected_workouts)
+
+# Rotta per gestire la modifica della scheda di allenamento
+# @app.route('/edit_training_plan/<int:training_plan_id>', methods=['POST'])
+# @login_required
+# def edit_training_plan(training_plan_id):
+#     trainer = Trainer.query.filter_by(id=current_user.id).first()
+
+#     if not trainer:
+#         flash("Devi essere un personal trainer per modificare una scheda di allenamento.")
+#         return redirect(url_for('home'))
+
+#     training_plan = TrainingPlan.query.get_or_404(training_plan_id)
+
+#     # Verifica che la scheda appartenga al personal trainer
+#     if training_plan.trainer_id != trainer.id:
+#         flash("Non sei autorizzato a modificare questa scheda di allenamento.")
+#         return redirect(url_for('trainer_dashboard'))
+
+#     # Aggiorna i dati della scheda di allenamento
+#     training_plan.title = request.form['title']
+#     training_plan.description = request.form['description']
+
+#     # Aggiorna gli allenamenti della scheda
+#     selected_workouts_ids = request.form.getlist('workouts')
+#     selected_workouts = Workout.query.filter(Workout.id.in_(selected_workouts_ids)).all()
+#     training_plan.workouts = selected_workouts
+
+#     db.session.commit()
+
+#     flash("Scheda di allenamento modificata con successo!")
+#     return redirect(url_for('trainer_dashboard'))
+
+# if __name__ == '__main__':
+#     app.run(debug=True)
+
+
+########################################
+
+# editworkout.html
+
+
+# Rotta per mostrare il modulo di modifica dell'allenamento
+# @app.route('/edit_workout/<int:workout_id>', methods=['GET'])
+# @login_required
+# def show_edit_workout(workout_id):
+#     trainer = Trainer.query.filter_by(id=current_user.id).first()
+
+#     if not trainer:
+#         flash("Devi essere un personal trainer per modificare un allenamento.")
+#         return redirect(url_for('home'))
+
+#     workout = Workout.query.get_or_404(workout_id)
+
+#     # Verifica che l'allenamento appartenga al personal trainer
+#     if workout.trainer_id != trainer.id:
+#         flash("Non sei autorizzato a modificare questo allenamento.")
+#         return redirect(url_for('trainer_dashboard'))
+
+#     return render_template('edit_workout.html', workout=workout)
+
+# # Rotta per gestire la modifica dell'allenamento
+# @app.route('/edit_workout/<int:workout_id>', methods=['POST'])
+# @login_required
+# def edit_workout(workout_id):
+#     trainer = Trainer.query.filter_by(id=current_user.id).first()
+
+#     if not trainer:
+#         flash("Devi essere un personal trainer per modificare un allenamento.")
+#         return redirect(url_for('home'))
+
+#     workout = Workout.query.get_or_404(workout_id)
+
+#     # Verifica che l'allenamento appartenga al personal trainer
+#     if workout.trainer_id != trainer.id:
+#         flash("Non sei autorizzato a modificare questo allenamento.")
+#         return redirect(url_for('trainer_dashboard'))
+
+#     # Aggiorna i dati dell'allenamento
+#     workout.title = request.form['title']
+#     workout.description = request.form['description']
+#     workout.level = request.form['level']
+#     workout.public = 'public' in request.form  # True se il checkbox è selezionato
+
+#     db.session.commit()
+
+#     flash("Allenamento modificato con successo!")
+#     return redirect(url_for('trainer_dashboard'))
+
+# if __name__ == '__main__':
+#     app.run(debug=True)
+
+
+#############################################
+
+# view_training_plan.html
+
+# Rotta per visualizzare una scheda di allenamento
+# @app.route('/view_training_plan/<int:training_plan_id>', methods=['GET'])
+# @login_required
+# def view_training_plan(training_plan_id):
+#     training_plan = TrainingPlan.query.get_or_404(training_plan_id)
+
+#     # Controllo dei permessi: solo il cliente o il personal trainer che ha creato la scheda possono vederla
+#     if current_user.id not in [training_plan.client_id, training_plan.trainer_id]:
+#         flash("Non sei autorizzato a visualizzare questa scheda di allenamento.")
+#         return redirect(url_for('home'))
+
+#     # Determina il tipo di utente: cliente o personal trainer
+#     user_type = 'cliente' if hasattr(current_user, 'trainer_id') else 'trainer'
+
+#     return render_template('view_training_plan.html', training_plan=training_plan, user_type=user_type)
+
+# # Rotta per votare una scheda di allenamento
+# @app.route('/rate_training_plan/<int:training_plan_id>', methods=['POST'])
+# @login_required
+# def rate_training_plan(training_plan_id):
+#     training_plan = TrainingPlan.query.get_or_404(training_plan_id)
+
+#     # Verifica che solo il cliente possa votare
+#     if not hasattr(current_user, 'trainer_id') or current_user.id != training_plan.client_id:
+#         flash("Non sei autorizzato a valutare questa scheda di allenamento.")
+#         return redirect(url_for('home'))
+
+#     # Ottieni il voto dal form
+#     rating = int(request.form['rating'])
+
+#     # Aggiorna il rating della scheda e del personal trainer
+#     if rating < 1 or rating > 5:
+#         flash("Il voto deve essere compreso tra 1 e 5.")
+#         return redirect(url_for('view_training_plan', training_plan_id=training_plan_id))
+
+#     # Aggiorna il rating nel database
+#     training_plan.rating = rating
+#     db.session.commit()
+
+#     # Ricalcola il rating del personal trainer basato sulle schede
+#     trainer = Trainer.query.get(training_plan.trainer_id)
+#     ratings = [plan.rating for plan in trainer.training_plans if plan.rating is not None]
+#     trainer.rating = sum(ratings) / len(ratings) if ratings else 0
+#     db.session.commit()
+
+#     flash("Valutazione inviata con successo!")
+#     return redirect(url_for('client_dashboard'))
+
+# if __name__ == '__main__':
+#     app.run(debug=True)
