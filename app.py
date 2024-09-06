@@ -3,7 +3,12 @@ from flask_login import LoginManager, login_user, login_required, logout_user, c
 from werkzeug.security import generate_password_hash, check_password_hash
 
 import user_dao
-import workout_dao  
+import clients_dao
+import personal_trainers_dao
+import workouts_dao
+import workout_sheets_dao
+import worksheet_rating_dao
+import personal_trainers_dao
 from models import User
 
 ###############################
