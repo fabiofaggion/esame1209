@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-
+import sqlite3
 import user_dao
 import clients_dao
 import personal_trainers_dao
@@ -11,36 +11,19 @@ import worksheet_rating_dao
 import personal_trainers_dao
 from models import User
 
-###############################
-#########TODO QUESTO CODICE è DA IMPLEMENTARE?
-###############################
-# from flask_sqlalchemy import SQLAlchemy
-# from flask_migrate import Migrate
-
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mydatabase.db'
-# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# db = SQLAlchemy(app)
-# migrate = Migrate(app, db)
-
-# # Importa i modelli
-# from models import User, Trainer, Client, Workout, TrainingPlan
-
-
-# Create the application
+# Crea l'applicazione
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'trisetitri'
 
-# Creare un file di database di test
-# connection = sqlite3.connect('db/test.db')
-# cursor = connection.cursor()
+# Configura Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
 
-import sqlite3
-
+# Funzione per testare la connessione al database
 def test_db_connection():
     try:
-        # Usa il percorso relativo al database come definito nella tua configurazione
-        connection = sqlite3.connect('db/database.db')
+        # Usa il percorso corretto al database
+        connection = sqlite3.connect('C:/Users/Fabio/Desktop/flask/esame1209/db/database.db')
         cursor = connection.cursor()
         cursor.execute('SELECT name FROM sqlite_master WHERE type="table";')
         tables = cursor.fetchall()
@@ -52,9 +35,62 @@ def test_db_connection():
 test_db_connection()
 
 
-
+# Inizializza il gestore di login
 login_manager = LoginManager()
 login_manager.init_app(app)
+
+# Route LOGIN
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        # Logica di autenticazione
+        user_in_db = user_dao.get_user_by_username(username)
+        print(f"User in DB: {user_in_db}")  # Debug: verifica cosa ritorna la funzione
+        
+        if user_in_db and check_password_hash(user_in_db['password'], password):
+            user = User(
+                id=user_in_db['id'],
+                username=user_in_db['username'],
+                password=user_in_db['password'],
+                type=user_in_db['user_type']
+            )
+            login_user(user)
+            flash('Login successful', 'success')
+            print(f"Logged in as: {user.username}")  # Debug: conferma l'avvenuto login
+
+            if user.type == 'personal_trainer':
+                return redirect(url_for('home_personal'))
+            else:
+                return redirect(url_for('home_client'))
+        else:
+            flash('Invalid credentials', 'danger')
+            print("Invalid credentials")  # Debug: credenziali non valide
+            return redirect(url_for('login'))
+    return render_template('login.html')
+
+# LOGOUT
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()  # Esegue il logout dell'utente
+    flash('You have been logged out.', 'info')
+    return redirect(url_for('login'))
+
+# Funzione di callback di Flask-Login per caricare l'utente
+@login_manager.user_loader
+def load_user(user_id):
+    db_user = user_dao.get_user_by_id(user_id)  # Assicurati che questa funzione usi SQLite correttamente
+    if db_user:
+        return User(
+            id=db_user['id'],
+            username=db_user['username'],
+            password=db_user['password'],
+            type=db_user['user_type']
+        )
+    return None
 
 # Error Handler
 @app.errorhandler(404)
@@ -131,65 +167,81 @@ def sign_up():
         # Extract form data into a dictionary
         new_user_from_form = request.form.to_dict()
         
+        print("Form data received:", new_user_from_form)  # Print form data for debugging
+        
         # Check if user already exists in the database
         user_in_db = user_dao.get_user_by_username(new_user_from_form.get('username'))
         if user_in_db:
             flash('C\'è già un utente registrato con questo nickname', 'danger')
+            print(f"User already exists: {user_in_db}")  # Print existing user data
             return redirect(url_for('sign_up'))
 
         # Hash the user's password
         new_user_from_form['password'] = generate_password_hash(new_user_from_form.get('password'))
-        
-        # Capture user type from the form
-        new_user_from_form['user_type'] = new_user_from_form.get('user_type')
+        print(f"Password hashed: {new_user_from_form['password']}")  # Print hashed password
+
+        # Ensure all required fields are present
+        if 'name' not in new_user_from_form or not new_user_from_form['name']:
+            print("Error: 'name' field is missing or empty")
+            flash('Il campo nome è obbligatorio', 'danger')
+            return redirect(url_for('sign_up'))
+
+        # Capture user role from the form
+        new_user_from_form['role'] = new_user_from_form.get('role')
+        print(f"User role: {new_user_from_form['role']}")  # Print user role
 
         # Save the new user in the database
         success = user_dao.create_user(new_user_from_form)
 
         if success:
             flash('New profile created', 'success')
+            print("User successfully created")  # Print success message
             return redirect(url_for('base'))
         else:
             flash('Errore nella creazione del utente: riprova!', 'danger')
+            print("Error creating user")  # Print error message
             return redirect(url_for('sign_up'))
+
     return render_template('signup.html')
 
-# Route LOGIN
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+
+
+# # Route LOGIN
+# @app.route('/login', methods=['GET', 'POST'])
+# def login():
+#     if request.method == 'POST':
+#         username = request.form.get('username')
+#         password = request.form.get('password')
         
-        # Logica di autenticazione
-        user_in_db = user_dao.get_user_by_username(username)
-        if user_in_db and check_password_hash(user_in_db['password'], password):
-            user = User(id=user_in_db['id'], username=user_in_db['username'], password=user_in_db['password'], type=user_in_db['user_type'])
-            login_user(user)
-            flash('Login successful', 'success')
-            if user.type == 'personal_trainer':
-                return redirect(url_for('home_personal'))
-            else:
-                return redirect(url_for('home_client'))
-        else:
-            flash('Invalid credentials', 'danger')
-            return redirect(url_for('login'))
-    return render_template('login.html')
+#         # Logica di autenticazione
+#         user_in_db = user_dao.get_user_by_username(username)
+#         if user_in_db and check_password_hash(user_in_db['password'], password):
+#             user = User(id=user_in_db['id'], username=user_in_db['username'], password=user_in_db['password'], type=user_in_db['user_type'])
+#             login_user(user)
+#             flash('Login successful', 'success')
+#             if user.type == 'personal_trainer':
+#                 return redirect(url_for('home_personal'))
+#             else:
+#                 return redirect(url_for('home_client'))
+#         else:
+#             flash('Invalid credentials', 'danger')
+#             return redirect(url_for('login'))
+#     return render_template('login.html')
 
-# LOGOUT
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()  # Questo è fornito da Flask-Login per effettuare il logout
-    flash('You have been logged out.', 'info')
-    return redirect(url_for('login'))
+# # LOGOUT
+# @app.route('/logout')
+# @login_required
+# def logout():
+#     logout_user()  # Questo è fornito da Flask-Login per effettuare il logout
+#     flash('You have been logged out.', 'info')
+#     return redirect(url_for('login'))
 
-@login_manager.user_loader
-def load_user(user_id):
-    db_user = user_dao.get_user_by_id(user_id)
-    if db_user:
-        return User(id=db_user['id'], username=db_user['username'], password=db_user['password'], type=db_user['user_type'])
-    return None
+# @login_manager.user_loader
+# def load_user(user_id):
+#     db_user = user_dao.get_user_by_id(user_id)
+#     if db_user:
+#         return User(id=db_user['id'], username=db_user['username'], password=db_user['password'], type=db_user['user_type'])
+#     return None
 
 if __name__ == '__main__':
     app.run(debug=True)
